@@ -2,10 +2,9 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"example.com/events-app/config"
-	"example.com/events-app/models"
+	"example.com/events-app/controllers"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -27,14 +26,19 @@ func main() {
 	
 	api := server.Group("/api") // membuat route group api
 	{
-		api.POST("/events", createEvent)
-		api.GET("/events", getEvents)
+		api.POST("/events", controllers.CreateEvent)
+		api.GET("/events", controllers.GetEvents)
+		api.GET("/events/:id", controllers.GetEventById) // membuat route detail
+		api.PUT("/events/:id", controllers.UpdateEvent) // route update by id
+		api.DELETE("/events/:id", controllers.DeleteEvent)
 	}
 
 	server.Run(":8080") // menjalankan server
 
 }
 
+/*
+BEST PRACTICE : PINDAHKAN KE FOLDER CONTROLLER 
 // Function Handlers => menjalankan bussines logicnya
 func getEvents(context *gin.Context) {
 	// variabel untuk menampung nilainya
@@ -65,5 +69,6 @@ func createEvent(context *gin.Context) {
 		"message" : "Created Event",
 		"event" : event,
 	})
-
 }
+
+*/
