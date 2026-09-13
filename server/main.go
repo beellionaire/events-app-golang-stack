@@ -26,11 +26,18 @@ func main() {
 	
 	api := server.Group("/api") // membuat route group api
 	{
+
+		// route event
 		api.POST("/events", controllers.CreateEvent)
 		api.GET("/events", controllers.GetEvents)
 		api.GET("/events/:id", controllers.GetEventById) // membuat route detail
 		api.PUT("/events/:id", controllers.UpdateEvent) // route update by id
 		api.DELETE("/events/:id", controllers.DeleteEvent)
+
+		// route auth
+		api.POST("/auth/register", controllers.RegisterUser)
+		api.POST("/auth/login", controllers.LoginUser)
+
 	}
 
 	server.Run(":8080") // menjalankan server

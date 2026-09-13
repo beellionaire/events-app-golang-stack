@@ -28,7 +28,7 @@ func ConnectDB() {
 	}
 
 	// jika berhasil maka setiap ada perubahan langsung terganti
-	err = database.AutoMigrate(&models.Event{})
+	err = database.AutoMigrate(&models.Event{}, models.User{})
 	if err != nil {
 		log.Fatal("Gagal melakukan migration database", err)
 	}

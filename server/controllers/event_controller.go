@@ -45,7 +45,7 @@ func GetEvents(context *gin.Context) {
 	})
 }
 
-// Function show detail data ====================================
+// Function show detail data =======================================
 func GetEventById(context *gin.Context) {
 	var event models.Event // hanya mengambil satu objek saja
 	
@@ -69,7 +69,7 @@ func GetEventById(context *gin.Context) {
 
 }
 
-// Function update data ====================================
+// Function update data ==============================================
 func UpdateEvent(context *gin.Context) {
 	var event models.Event
 
@@ -104,7 +104,7 @@ func UpdateEvent(context *gin.Context) {
 	})
 }
 
-// Function Delete ============================================
+// Function Delete ===============================================
 func DeleteEvent(context *gin.Context) {
 	var event models.Event
 	ParamsId := context.Param("id")
