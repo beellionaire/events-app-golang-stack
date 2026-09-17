@@ -108,8 +108,8 @@ func LoginUser(context *gin.Context) {
 
 	// buat token apakah user sedang login atau tidak
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub" : user.ID,
-		"exp" : time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"sub" : user.ID, // menyimpan id user yang kita gunakan untuk login, dan dapat digunakan untuk mengamankan data dari rute yang spesifik (detail,dll)
+		"exp" : time.Now().Add(time.Hour * 24 * 7).Unix(), // menentukan waktu expired loginnnya
 	})
 
 	// masukkan jwt_secret ke dalam token
@@ -132,4 +132,32 @@ func LoginUser(context *gin.Context) {
 			"events" :user.Events,
 		},
 	})
+}
+
+
+// FUNCTION MENGAMBIL DATA USER
+func GetCurrentUser(context *gin.Context) {
+	// ambil userID yang yang kita simpan dalam context.Set() dalam middlewares
+	userID, exists := context.Get("userID")
+	if !exists {
+		context.JSON(http.StatusUnauthorized, gin.H{
+			"error" : "Tidak dapat mengautentikasi",
+		})
+		return
+	}
+	var user models.User
+
+	userData := config.DB.Select("id", "name", "email").First(&user, userID).Error
+	if userData != nil {
+		context.JSON(http.StatusNotFound, gin.H{
+			"error" : "Data tidak ditemukan",
+		})
+		return
+	}
+
+	// response ketika berhasil
+	context.JSON(http.StatusOK, gin.H{
+		"user" : user,
+	})
+
 }
