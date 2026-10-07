@@ -10,6 +10,11 @@ import (
 
 // Function create data ===========================================
 func CreateEvent(context *gin.Context) {
+
+	// ambil id user yang sedang login => diambil dari middleware set
+	// untuk mengetahui siapa yang membuat event
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 
 	err := context.ShouldBindJSON(&event)
@@ -20,8 +25,9 @@ func CreateEvent(context *gin.Context) {
 		return // agar tidak melanjutkan mengeksekusi kode di bawahnya
 	}
 
-	// data dummy untuk UserID jika belum membuat fitur autentikasi
-	event.UserID = 1
+	// ambil data dari userID dengan tipe data integer
+	userIdInt := userID.(int) // 1. Lakukan Type Assertion ke tipe aslinya yaitu 'int'
+	event.UserID = uint(userIdInt) // 2. Lakukan Type Conversion (ubah bentuk) dari 'int' ke 'uint'
 
 	// masukkan data ke dalam database
 	config.DB.Create(&event)
@@ -71,6 +77,10 @@ func GetEventById(context *gin.Context) {
 
 // Function update data ==============================================
 func UpdateEvent(context *gin.Context) {
+
+	// ambil user yang sedang login
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 
 	// mengambil id yang ingin di update 
@@ -81,6 +91,15 @@ func UpdateEvent(context *gin.Context) {
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
 			"error" : "Data tidak ditemukan",
+		})
+		return
+	}
+
+	userIdInt := userID.(int)
+	// cek apakah user saat ini adalah user yang membuat event tersebut
+	if event.UserID != uint(userIdInt) {
+		context.JSON(http.StatusForbidden, gin.H{
+			"error" : "Tidak bisa mengupdate event pengguna lain",
 		})
 		return
 	}
@@ -106,6 +125,10 @@ func UpdateEvent(context *gin.Context) {
 
 // Function Delete ===============================================
 func DeleteEvent(context *gin.Context) {
+
+	// ambil user yang sedang login saat ini
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 	ParamsId := context.Param("id")
 
@@ -113,6 +136,16 @@ func DeleteEvent(context *gin.Context) {
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
 			"error" : "Data tidak ditemukan",
+		})
+		return
+	}
+
+
+	userIdInt := userID.(int)
+	// cek apakah user yang sedang login saat ini adalah user yang memiliki event tersebut
+	if event.UserID != uint(userIdInt) {
+		context.JSON(http.StatusForbidden, gin.H{
+			"error" : "Tidak dapat menghapus event milik user lain",
 		})
 		return
 	}

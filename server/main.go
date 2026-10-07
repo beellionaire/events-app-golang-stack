@@ -29,12 +29,9 @@ func main() {
 	{
 
 		// route event
-		api.POST("/events", controllers.CreateEvent)
 		api.GET("/events", controllers.GetEvents)
 		api.GET("/events/:id", controllers.GetEventById) // membuat route detail
-		api.PUT("/events/:id", controllers.UpdateEvent) // route update by id
-		api.DELETE("/events/:id", controllers.DeleteEvent)
-
+		
 		// route auth
 		api.POST("/auth/register", controllers.RegisterUser)
 		api.POST("/auth/login", controllers.LoginUser)
@@ -43,6 +40,9 @@ func main() {
 		protected.Use(middlewares.RequiredAuth()) 
 		{
 			protected.GET("/auth/me", controllers.GetCurrentUser)
+			protected.POST("/events", controllers.CreateEvent)
+			protected.PUT("/events/:id", controllers.UpdateEvent) // route update by id
+			protected.DELETE("/events/:id", controllers.DeleteEvent) // route delete by id
 		}
 
 	}
@@ -50,39 +50,3 @@ func main() {
 	server.Run(":8080") // menjalankan server
 
 }
-
-/*
-BEST PRACTICE : PINDAHKAN KE FOLDER CONTROLLER 
-// Function Handlers => menjalankan bussines logicnya
-func getEvents(context *gin.Context) {
-	// variabel untuk menampung nilainya
-	events := models.GetAllEvents()
-
-	context.JSON(http.StatusOK, events)
-}
-
-func createEvent(context *gin.Context) {
-	var event models.Event		// mengambil inputan dari modals
-	err := context.ShouldBindJSON(&event)
-
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message" : "Couldnt parse request data",
-			"error" : err.Error(),
-		})
-		return
-	}
-
-	// dummy data
-	event.UserId = 1
-
-	// simpan event => panggil function save yang ada di modal
-	event.Save();
-
-	context.JSON(http.StatusCreated, gin.H{
-		"message" : "Created Event",
-		"event" : event,
-	})
-}
-
-*/
