@@ -79,13 +79,28 @@ func CreateEvent(c *gin.Context) {
 // GET ALL EVENTS
 // Menampilkan semua data event yang ada di database.
 // =====================================================================
-func GetEvents(context *gin.Context) {
+func GetEvents(c *gin.Context) {
 	var events []models.Event // Siapkan keranjang (slice) kosong
 
-	// Tarik semua data dari tabel events dan masukkan ke keranjang
-	config.DB.Find(&events)
+	// 1. inisisasi dasar query di gorm => mengatur nilai pencarian berdasarkan query
+	query := config.DB.Model(&models.Event{})
 
-	context.JSON(http.StatusOK, gin.H{
+	// 2. tangkap fungsi filter by query
+	
+	
+	
+
+	// PAGINATION
+	// 3. hitung jumlah data
+	var totalRows int64
+	query.Count(&totalRows)
+
+	// pageStr := c.DefaultQuery("page", "1") // nilai default jika tidak memasukkan data
+  // limitStr := c.DefaultQuery("limit", "10")	// limit berapa data yang mau kita tampilkan per pagenya
+
+ 
+	
+	c.JSON(http.StatusOK, gin.H{
 		"message": "Berhasil menampilkan semua data",
 		"event":   events,
 	})
