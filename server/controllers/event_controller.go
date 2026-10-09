@@ -86,12 +86,13 @@ func GetEvents(c *gin.Context) {
 	query := config.DB.Model(&models.Event{})
 
 	// 2. tangkap fungsi filter by query
-	
-	
-	
+	search := c.Query("search")
+	if search != "" {
+		query = query.Where("name ILIKE ? OR description ILIKE ?", "%" + search + "%", "%" + search + "%")
+	}
 
 	// PAGINATION
-	// 3. hitung jumlah data
+	// 3. hitung jumlah data sebelum di limit
 	var totalRows int64
 	query.Count(&totalRows)
 
