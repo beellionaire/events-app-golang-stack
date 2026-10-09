@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"example.com/events-app/config"
@@ -11,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/imagekit-developer/imagekit-go/v2"
 	"github.com/imagekit-developer/imagekit-go/v2/option"
+	"gorm.io/gorm"
 )
 
 // =====================================================================
@@ -96,15 +99,49 @@ func GetEvents(c *gin.Context) {
 	var totalRows int64
 	query.Count(&totalRows)
 
-	// pageStr := c.DefaultQuery("page", "1") // nilai default jika tidak memasukkan data
-  // limitStr := c.DefaultQuery("limit", "10")	// limit berapa data yang mau kita tampilkan per pagenya
+	// 4. 
+	pageStr := c.DefaultQuery("page", "1") // nilai default jika tidak memasukkan data page
+  limitStr := c.DefaultQuery("limit", "3")	// limit berapa data yang mau kita tampilkan per pagenya
 
- 
-	
+  // konversi pageStr dan limitStr menjadi int
+	page, errPage := strconv.Atoi(pageStr)
+	if errPage != nil || page < 1 {
+		page = 1
+	}
+	limit, errLimit := strconv.Atoi(limitStr)
+	if errLimit != nil || limit < 1 {
+		limit = 3	
+	}
+
+	// 5. hitung offset
+	offset := (page - 1) * limit
+
+	// 6. hitung data per halaman 
+	totalPages := int(math.Ceil(float64(totalRows) / float64(limit)))
+
+	// 7. eksekusi fungsinya
+	// preload untuk menampilkan siapa user yang membuatnya (User dari tabel relasi) => data yang diambil dari User yang membuat event hanya id, name, dan emailnya
+	if err := query.Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id", "name", "email")
+	}).Limit(limit).Offset(offset).Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error" : "Gagal mengambil data event",
+		})
+		return
+	}
+
+	// tampilkan response jika berhasil
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Berhasil menampilkan semua data",
-		"event":   events,
+		"message" : "Berhasil mengambil data event",
+		"event" : events,
+		"meta" : gin.H{
+			"page" : page,
+			"limit" : limit,
+			"totalRows" : totalRows,
+			"totalPages" : totalPages,
+		},
 	})
+
 }
 
 // =====================================================================
@@ -118,7 +155,9 @@ func GetEventById(context *gin.Context) {
 	paramsId := context.Param("id")
 
 	// 2. Cari data berdasarkan ID tersebut
-	var eventData = config.DB.First(&event, paramsId).Error
+	var eventData = config.DB.Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id", "name", "email")
+	}).First(&event, paramsId).Error
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{"message": "Data tidak ditemukan"})
 		return
@@ -130,6 +169,48 @@ func GetEventById(context *gin.Context) {
 		"event":   event,
 	})
 }
+
+// =====================================================================
+// GET EVENT BY USER
+// Mengambil data event milik user yang sedang login saat ini
+// =====================================================================
+func GetEventByUser(c *gin.Context) {
+	var events []models.Event
+
+	// 1. AMBIL ID USER DARI MIDDLEWARE (PERBAIKAN TYPO)
+	// Pastikan huruf kecil 'u' pada "userID", sesuai dengan yang diset di Middleware.
+	// Kita gunakan variabel 'exists' untuk memastikan user benar-benar sudah login.
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User tidak terautentikasi"})
+		return
+	}
+
+	// 2. QUERY DATABASE DENGAN FILTER WHERE
+	// Preload: Tarik data pembuat event, tapi batasi hanya id, name, dan email.
+	// Where: Filter tabel event, ambil HANYA baris yang kolom user_id-nya sama dengan userID yang sedang login.
+	// Find: Masukkan semua hasilnya ke dalam keranjang 'events'.
+	errEvent := config.DB.Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id", "name", "email")
+	}).Where("user_id = ?", userID).Find(&events).Error
+
+	// 3. TANGKAP JIKA ADA ERROR SAAT QUERY KE DATABASE
+	// Catatan: Jika user belum punya event sama sekali, .Find() TIDAK MENGHASILKAN ERROR,
+	// melainkan hanya mengembalikan array kosong []. Error di sini benar-benar error sistem/database.
+	if errEvent != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Terjadi kesalahan saat mengambil data event",
+		})
+		return
+	}
+
+	// 4. TAMPILKAN HASILNYA
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Data berhasil ditemukan",
+		"events":  events,
+	})
+}
+
 
 // =====================================================================
 // UPDATE EVENT
