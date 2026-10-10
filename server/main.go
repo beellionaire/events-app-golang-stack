@@ -44,6 +44,11 @@ func main() {
 			protected.POST("/events", controllers.CreateEvent)
 			protected.PUT("/events/:id", controllers.UpdateEvent) // route update by id
 			protected.DELETE("/events/:id", controllers.DeleteEvent) // route delete by id
+
+			protected.POST("/booking/", controllers.CreateBookingEvent)
+			protected.GET("/booking/user", controllers.GetBookingByUser)
+			
+			protected.DELETE("/booking/:id", controllers.DeleteBooking)
 		}
 
 	}
