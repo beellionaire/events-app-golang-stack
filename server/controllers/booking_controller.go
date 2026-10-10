@@ -99,7 +99,7 @@ func GetBookingByUser(c *gin.Context) {
 
 	if errBookingData != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"erroro" : "Event tidak ditemukan",
+			"error" : "Event tidak ditemukan",
 		})
 		return
 	}

@@ -157,6 +157,8 @@ func GetEventById(context *gin.Context) {
 	// 2. Cari data berdasarkan ID tersebut
 	var eventData = config.DB.Preload("User", func(db *gorm.DB) *gorm.DB {
 		return db.Select("id", "name", "email")
+	}).Preload("Booking").Preload("Booking.User", func(db *gorm.DB) *gorm.DB{
+		return db.Select("id","name","email")
 	}).First(&event, paramsId).Error
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{"message": "Data tidak ditemukan"})
